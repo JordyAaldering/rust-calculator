@@ -23,8 +23,8 @@ To construct a stream of tokens, we define a `Lexer` struct, which needs a
 lifetime `'source` for the string.
 
 ```rust
-pub struct Lexer<'source> {
-    /// The input program.
+struct Lexer<'source> {
+    /// The input program as a string.
     source: &'source str,
     /// Index of the current character in the source string.
     current: usize,
@@ -155,5 +155,77 @@ However, we need one final case for when an invalid token is supplied.
 enum Token {
     ...
     Unexpected(char),
+}
+```
+
+## Location Information
+
+Whenever an error occurs, we want to be able to give the corresponding line
+and column numbers from the source code file.
+We represent this in a struct that tracks the starting line and column, and the
+ending line and column.
+Although a token can only span a single line, we will also be using this
+location information in the parser, where nodes can span multiple lines.
+
+```rust
+struct Loc {
+    line_start: usize,
+    line_end: usize,
+    col_start: usize,
+    col_end: usize,
+}
+
+impl Loc {
+    fn new(line: usize, col_start: usize, col_end: usize) -> Self {
+        Self {
+            line_start: line,
+            line_end: line,
+            col_start,
+            col_end
+        }
+    }
+}
+```
+
+We then extend the `Lexer` struct to keep track of the current line number and
+column number in the source file.
+
+```rust
+struct Lexer<'source> {
+    /// The input program as a string.
+    source: &'source str,
+    /// Index of the current character in the source string.
+    current: usize,
+    /// Line number of the current character.
+    line: usize,
+    /// Column number of the current character.
+    col: usize,
+}
+```
+
+Whenever we consume a character, we also increment the current column number.
+Expect when we encounter a newline character, in which case we reset the column
+number to one, and increment the current line number instead.
+
+We change the type of the iterator from `Token` to a token-location tuple
+`(Token, Loc)`, and create and return the location information.
+
+```rust
+impl<'source> Iterator for Lexer<'source> {
+    type Item = (Token, Loc);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.skip_whitespace();
+
+        let col_start = self.col;
+
+        let token = match self.next_char()? {
+            ...
+        };
+
+        let col_end = self.col;
+        let loc = Loc::new(self.line, col_start, col_end);
+        Some((token, loc))
+    }
 }
 ```

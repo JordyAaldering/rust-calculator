@@ -53,19 +53,19 @@ Where `Binary` and `Unary` are defined as recursive structs, and `Num` is a
 simple wrapper around `u32`.
 
 ```rust
-pub struct Binary {
-    pub l: Box<Expr>,
-    pub r: Box<Expr>,
-    pub op: Bop,
+struct Binary {
+    l: Box<Expr>,
+    r: Box<Expr>,
+    op: Bop,
 }
 
-pub struct Unary {
-    pub r: Box<Expr>,
-    pub op: Uop,
+struct Unary {
+    r: Box<Expr>,
+    op: Uop,
 }
 
-pub struct Num {
-    pub num: u32,
+struct Num {
+    num: u32,
 }
 ```
 
@@ -76,7 +76,7 @@ to be able to distinguish the number case from the binary and unary cases.
 Therefore, we define it as an enum type instead.
 
 ```rust
-pub enum Expr {
+enum Expr {
     Binary(Binary),
     Unary(Unary),
     Num(Num),
