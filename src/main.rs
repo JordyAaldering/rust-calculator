@@ -4,6 +4,7 @@ mod lexer;
 mod loc;
 mod parser;
 mod trav;
+mod typ;
 mod typecheck;
 
 use std::{env, fs};
@@ -24,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Location: {}", expr.loc());
 
     let mut typecheck = TypeCheck { };
-    typecheck.trav_expr(&mut expr).unwrap();
+    let _typ = typecheck.trav_expr(&mut expr).unwrap();
 
     let context = inkwell::context::Context::create();
     let mut compile = Compile::new(&context)?;

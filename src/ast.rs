@@ -55,6 +55,7 @@ impl fmt::Display for Unary {
 
 pub struct Num {
     pub num: u32,
+    // Metadata
     pub loc: Loc,
 }
 

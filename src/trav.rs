@@ -2,8 +2,8 @@ use std::fmt;
 
 use crate::ast::*;
 
-pub trait Traversal<E: fmt::Debug> {
-    fn trav_expr(&mut self, expr: &mut Expr) -> Result<(), E> {
+pub trait Traversal<T: Default, E: fmt::Debug> {
+    fn trav_expr(&mut self, expr: &mut Expr) -> Result<T, E> {
         match expr {
             Expr::Binary(binary) => self.trav_binary(binary),
             Expr::Unary(unary) => self.trav_unary(unary),
@@ -11,16 +11,16 @@ pub trait Traversal<E: fmt::Debug> {
         }
     }
 
-    fn trav_binary(&mut self, binary: &mut Binary) -> Result<(), E> {
+    fn trav_binary(&mut self, binary: &mut Binary) -> Result<T, E> {
         self.trav_expr(&mut binary.l)?;
         self.trav_expr(&mut binary.r)
     }
 
-    fn trav_unary(&mut self, unary: &mut Unary) -> Result<(), E> {
+    fn trav_unary(&mut self, unary: &mut Unary) -> Result<T, E> {
         self.trav_expr(&mut unary.r)
     }
 
-    fn trav_num(&mut self, _num: &mut Num) -> Result<(), E> {
-        Ok(())
+    fn trav_num(&mut self, _num: &mut Num) -> Result<T, E> {
+        Ok(T::default())
     }
 }
