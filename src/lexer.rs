@@ -102,7 +102,7 @@ impl<'source> Iterator for Lexer<'source> {
             '!' if self.match_char('=') => Token::Ne,
             '!' => Token::Not,
             '0'..='9' => {
-                // Include this initial token as well.
+                // Include this initial character as well.
                 let start = self.current - 1;
 
                 while self.peek_char().is_some_and(|c| c.is_digit(10)) {

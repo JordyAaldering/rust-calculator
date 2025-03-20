@@ -1,26 +1,21 @@
-mod ast;
-mod compile;
-mod lexer;
-mod loc;
-mod parser;
-mod trav;
-mod typ;
-mod typecheck;
-
 use std::{env, fs};
 
-use compile::Compile;
-use trav::Traversal;
-use typecheck::TypeCheck;
+use calculator::{
+    compile::Compile,
+    lexer::Lexer,
+    parser::{OperatorGroup, Parser},
+    trav::Traversal,
+    typecheck::TypeCheck
+};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     let source = fs::read_to_string(&args[1]).unwrap();
 
-    let lexer = lexer::Lexer::new(&source);
-    let mut parser = parser::Parser::new(lexer);
+    let lexer = Lexer::new(&source);
+    let mut parser = Parser::new(lexer);
 
-    let (mut expr, _) = parser.parse_expr(parser::OperatorGroup::LeftToRight(0)).unwrap();
+    let (mut expr, _) = parser.parse_expr(OperatorGroup::LeftToRight(0)).unwrap();
     println!("{}", expr);
     println!("Location: {}", expr.loc());
 

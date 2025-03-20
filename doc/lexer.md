@@ -128,7 +128,7 @@ do not know how many characters we need to match.
 
 ```rust
 '0'..='9' => {
-    // Include this initial token as well.
+    // Include this initial character as well.
     let start = self.current - 1;
 
     while self.peek_char().is_some_and(|c| c.is_digit(10)) {
