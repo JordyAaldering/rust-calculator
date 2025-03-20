@@ -23,17 +23,16 @@ impl<'source> Parser<'source> {
     }
 
     pub fn parse_expr(&mut self, precedence: OperatorGroup) -> Result<(Expr, Loc), ParseError> {
-        let (token, mut loc) = self.lexer.next()
-            .ok_or(ParseError::UnexpectedEof)?;
+        let (token, mut loc) = self.next()?;
 
         let mut left = match token {
-            Token::Int(i) => {
-                Expr::U32(U32 { i, loc })
+            Token::Int(num) => {
+                Expr::Num(Num { num, loc })
             },
             Token::LParen => {
                 let (expr, _) = self.parse_expr(OperatorGroup::LeftToRight(0))?;
 
-                let (token, end) = self.lexer.next().ok_or(ParseError::UnexpectedEof)?;
+                let (token, end) = self.next()?;
                 if token != Token::RParen {
                     return Err(ParseError::Unbalanced(Token::LParen, loc, end));
                 }
@@ -80,6 +79,10 @@ impl<'source> Parser<'source> {
         }
 
         Ok(None)
+    }
+
+    fn next(&mut self) -> Result<(Token, Loc), ParseError> {
+        self.lexer.next().ok_or(ParseError::UnexpectedEof)
     }
 }
 

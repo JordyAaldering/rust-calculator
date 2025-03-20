@@ -5,7 +5,7 @@ use crate::loc::Loc;
 pub enum Expr {
     Binary(Binary),
     Unary(Unary),
-    U32(U32),
+    Num(Num),
 }
 
 impl Expr {
@@ -13,7 +13,7 @@ impl Expr {
         match self {
             Expr::Binary(binary) => binary.loc,
             Expr::Unary(unary) => unary.loc,
-            Expr::U32(u32) => u32.loc,
+            Expr::Num(num) => num.loc,
         }
     }
 }
@@ -23,7 +23,7 @@ impl fmt::Display for Expr {
         match self {
             Expr::Binary(binary) => write!(f, "{}", binary),
             Expr::Unary(unary) => write!(f, "{}", unary),
-            Expr::U32(u32) => write!(f, "{}", **u32),
+            Expr::Num(num) => write!(f, "{}", **num),
         }
     }
 }
@@ -53,16 +53,16 @@ impl fmt::Display for Unary {
     }
 }
 
-pub struct U32 {
-    pub i: u32,
+pub struct Num {
+    pub num: u32,
     pub loc: Loc,
 }
 
-impl std::ops::Deref for U32 {
+impl std::ops::Deref for Num {
     type Target = u32;
 
     fn deref(&self) -> &Self::Target {
-        &self.i
+        &self.num
     }
 }
 

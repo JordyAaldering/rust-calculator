@@ -47,7 +47,7 @@ impl<'ctx> Compile<'ctx> {
         match expr {
             Expr::Binary(binary) => self.trav_binary(binary),
             Expr::Unary(unary) => self.trav_unary(unary),
-            Expr::U32(int) => Ok(self.trav_int(int)),
+            Expr::Num(num) => Ok(self.trav_num(num)),
         }
     }
 
@@ -75,8 +75,8 @@ impl<'ctx> Compile<'ctx> {
         }
     }
 
-    pub fn trav_int(&mut self, i: U32) -> IntValue<'ctx> {
+    pub fn trav_num(&mut self, num: Num) -> IntValue<'ctx> {
         let i32_type = self.context.i32_type();
-        i32_type.const_int(*i as u64, false)
+        i32_type.const_int(*num as u64, false)
     }
 }

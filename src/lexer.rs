@@ -1,7 +1,23 @@
 use crate::loc::Loc;
 
+#[derive(Debug, PartialEq)]
+pub enum Token {
+    LParen,
+    RParen,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Pow,
+    Eq,
+    Ne,
+    Not,
+    Int(u32),
+    Unexpected(char),
+}
+
 pub struct Lexer<'source> {
-    /// The input program.
+    /// The input program as a string.
     source: &'source str,
     /// Index of the current character in the source string.
     current: usize,
@@ -16,10 +32,12 @@ impl<'source> Lexer<'source> {
         Self { source, current: 0, line: 1, col: 1 }
     }
 
+    /// Return the next character without consuming it.
     fn peek_char(&self) -> Option<char> {
         self.source.chars().nth(self.current)
     }
 
+    /// Return the next character and consume it.
     fn next_char(&mut self) -> Option<char> {
         if let Some(c) = self.source.chars().nth(self.current) {
             self.current += 1;
@@ -30,6 +48,8 @@ impl<'source> Lexer<'source> {
         }
     }
 
+    /// Check whether the next character is equal to the expected character.
+    /// Consumes the next character if it matches.
     fn match_char(&mut self, expected: char) -> bool {
         if self.peek_char().is_some_and(|c| c == expected) {
             self.current += 1;
@@ -40,6 +60,7 @@ impl<'source> Lexer<'source> {
         }
     }
 
+    /// Skip over any whitespace and newlines until we reach the next character.
     fn skip_whitespace(&mut self) {
         while let Some(c) = self.peek_char() {
             match c {
@@ -95,23 +116,8 @@ impl<'source> Iterator for Lexer<'source> {
             c => Token::Unexpected(c),
         };
 
-        let loc = Loc::new(self.line, col_start, self.col);
+        let col_end = self.col;
+        let loc = Loc::new(self.line, col_start, col_end);
         Some((token, loc))
     }
-}
-
-#[derive(Debug, PartialEq)]
-pub enum Token {
-    LParen,
-    RParen,
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Pow,
-    Eq,
-    Ne,
-    Not,
-    Int(u32),
-    Unexpected(char),
 }

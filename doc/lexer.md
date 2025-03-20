@@ -98,7 +98,7 @@ fn next(&mut self) -> Option<Self::Item> {
 The cases for `==`, `!=`, and `!` are a bit more complicated, since they exist
 of multiple tokens, and have some overlap. Namely, whenever we encounter a `!`
 we first need to check whether the next token is a `=`, in which case we should
-consume that character and well and return a `Ne` token.
+consume that character and return a `Ne` token.
 
 For this conditional consuming of tokens, we define the `match_char` function:
 
