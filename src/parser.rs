@@ -22,7 +22,11 @@ impl<'source> Parser<'source> {
         Self { lexer: lexer.peekable() }
     }
 
-    pub fn parse_expr(&mut self, precedence: OperatorGroup) -> Result<(Expr, Loc), ParseError> {
+    pub fn parse_expr(&mut self) -> Result<(Expr, Loc), ParseError> {
+        self.parse_binary((0, Assoc::LeftToRight))
+    }
+
+    pub fn parse_binary(&mut self, prec_assoc: (usize, Assoc)) -> Result<(Expr, Loc), ParseError> {
         let (token, mut loc) = self.next()?;
 
         let mut left = match token {
@@ -30,7 +34,7 @@ impl<'source> Parser<'source> {
                 Expr::Num(Num { num, loc })
             },
             Token::LParen => {
-                let (expr, _) = self.parse_expr(OperatorGroup::LeftToRight(0))?;
+                let (expr, _) = self.parse_expr()?;
 
                 let (token, end) = self.next()?;
                 if token != Token::RParen {
@@ -50,8 +54,8 @@ impl<'source> Parser<'source> {
             },
         };
 
-        while let Some((op, _loc)) = self.parse_bop(precedence)? {
-            let (right, end) = self.parse_expr(op.group())?;
+        while let Some((op, _loc)) = self.parse_bop(prec_assoc)? {
+            let (right, end) = self.parse_binary(op.group())?;
             loc += end;
             let binary = Binary { l: Box::new(left), r: Box::new(right), op, loc };
             left = Expr::Binary(binary);
@@ -62,15 +66,15 @@ impl<'source> Parser<'source> {
 
     fn parse_unary(&mut self, op: Uop, loc: Loc) -> Result<Unary, ParseError> {
         // Unary operators always have precedence
-        let (r, end) = self.parse_expr(OperatorGroup::LeftToRight(256))?;
+        let (r, end) = self.parse_binary((256, Assoc::LeftToRight))?;
         let unary = Unary { op, r: Box::new(r), loc: loc + end };
         Ok(unary)
     }
 
-    fn parse_bop(&mut self, precedence: OperatorGroup) -> Result<Option<(Bop, Loc)>, ParseError> {
+    fn parse_bop(&mut self, prec_assoc: (usize, Assoc)) -> Result<Option<(Bop, Loc)>, ParseError> {
         if let Some((token, _)) = self.lexer.peek() {
             if let Some(bop) = token.try_into_bop() {
-                if precedence.precedes(bop.group())? {
+                if precedes(prec_assoc, bop.group())? {
                     // Consume the token
                     let (_, loc) = self.lexer.next().unwrap();
                     return Ok(Some((bop, loc)));
@@ -87,41 +91,27 @@ impl<'source> Parser<'source> {
 }
 
 #[derive(Clone, Copy)]
-pub enum OperatorGroup {
-    LeftToRight(usize),
-    RightToLeft(usize),
-    NonAssoc(usize),
+pub enum Assoc {
+    LeftToRight,
+    RightToLeft,
+    NonAssoc,
 }
 
-impl OperatorGroup {
-    fn precedes(self, other: OperatorGroup) -> Result<bool, ParseError> {
-        match (self, other) {
-            (OperatorGroup::LeftToRight(l), OperatorGroup::RightToLeft(r)) |
-            (OperatorGroup::RightToLeft(l), OperatorGroup::RightToLeft(r)) |
-            (OperatorGroup::NonAssoc(l), OperatorGroup::RightToLeft(r)) => {
-                Ok(l <= r)
-            },
-            (OperatorGroup::LeftToRight(l), OperatorGroup::LeftToRight(r)) |
-            (OperatorGroup::LeftToRight(l), OperatorGroup::NonAssoc(r)) |
-            (OperatorGroup::RightToLeft(l), OperatorGroup::LeftToRight(r)) |
-            (OperatorGroup::RightToLeft(l), OperatorGroup::NonAssoc(r)) |
-            (OperatorGroup::NonAssoc(l), OperatorGroup::LeftToRight(r)) => {
-                Ok(l < r)
-            },
-            (OperatorGroup::NonAssoc(_), OperatorGroup::NonAssoc(_)) => {
-                Err(ParseError::NonAssoc)
-            }
-        }
+fn precedes((p1, a1): (usize, Assoc), (p2, a2): (usize, Assoc)) -> Result<bool, ParseError> {
+    match (a1, a2) {
+        (Assoc::NonAssoc, Assoc::NonAssoc) => Err(ParseError::NonAssoc),
+        (_, Assoc::RightToLeft) => Ok(p1 <= p2),
+        _ => Ok(p1 < p2),
     }
 }
 
 impl Bop {
-    fn group(&self) -> OperatorGroup {
+    fn group(&self) -> (usize, Assoc) {
         match self {
-            Bop::Pow => OperatorGroup::RightToLeft(5),
-            Bop::Mul | Bop::Div => OperatorGroup::LeftToRight(4),
-            Bop::Add | Bop::Sub => OperatorGroup::LeftToRight(3),
-            Bop::Eq | Bop::Ne => OperatorGroup::NonAssoc(2),
+            Bop::Pow => (5, Assoc::RightToLeft),
+            Bop::Mul | Bop::Div => (4, Assoc::LeftToRight),
+            Bop::Add | Bop::Sub => (3, Assoc::LeftToRight),
+            Bop::Eq | Bop::Ne => (2, Assoc::NonAssoc),
         }
     }
 }

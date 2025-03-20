@@ -3,7 +3,7 @@ use std::{env, fs};
 use calculator::{
     compile::Compile,
     lexer::Lexer,
-    parser::{OperatorGroup, Parser},
+    parser::Parser,
     trav::Traversal,
     typecheck::TypeCheck
 };
@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let lexer = Lexer::new(&source);
     let mut parser = Parser::new(lexer);
 
-    let (mut expr, _) = parser.parse_expr(OperatorGroup::LeftToRight(0)).unwrap();
+    let (mut expr, _) = parser.parse_expr().unwrap();
     println!("{}", expr);
     println!("Location: {}", expr.loc());
 
