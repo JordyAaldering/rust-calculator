@@ -1,6 +1,6 @@
 use crate::loc::Loc;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Token {
     LParen,
     RParen,
