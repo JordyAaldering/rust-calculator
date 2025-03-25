@@ -146,12 +146,8 @@ fn parse_expr(&mut self) -> Result<(Expr, Loc), ParseError> {
             Expr::Num(Num { num, loc })
         },
         Token::LParen => {
-            let expr = self.parse_expr()?;
-            // Don't include the parentheses in the location
-            loc = loc2;
-
             ...
-
+            loc += rloc;
             expr
         },
         _ => ...
@@ -187,3 +183,5 @@ something like `(1 == 2) == (2 == 3)`.
 Handling precedence and associativity in a parser is a non-trivial task.
 However, the Pratt parsing algorithm provides an elegant and relatively simple
 solution to this problem.
+
+## Pratt Parsing

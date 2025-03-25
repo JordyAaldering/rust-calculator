@@ -34,31 +34,30 @@ impl<'source> Parser<'source> {
                 Expr::Num(Num { num, loc })
             },
             Token::LParen => {
-                let (expr, loc2) = self.parse_expr()?;
-                // Don't include the parentheses in the location
-                loc = loc2;
+                let (expr, _) = self.parse_expr()?;
 
-                let (token, end) = self.next()?;
+                let (token, rloc) = self.next()?;
                 if token != Token::RParen {
                     // Unbalanced parenthesis; expected a `)` got `token`
-                    return Err(ParseError::Unbalanced(loc, end));
+                    return Err(ParseError::Unbalanced(loc, rloc));
                 }
 
+                loc += rloc;
                 expr
             },
             _ => {
                 let op = Uop::from_token(token)
                     .ok_or(ParseError::NotAnExpr(token, loc))?;
 
-                let (unary, end) = self.parse_unary(op, loc)?;
-                loc += end;
+                let (unary, rloc) = self.parse_unary(op, loc)?;
+                loc += rloc;
                 Expr::Unary(unary)
             },
         };
 
         while let Some((op, _loc)) = self.parse_bop(previous)? {
-            let (right, end) = self.parse_binary(op)?;
-            loc += end;
+            let (right, rloc) = self.parse_binary(op)?;
+            loc += rloc;
             let binary = Binary { l: Box::new(left), r: Box::new(right), op, loc };
             left = Expr::Binary(binary);
         }
@@ -67,9 +66,9 @@ impl<'source> Parser<'source> {
     }
 
     fn parse_unary(&mut self, op: Uop, mut loc: Loc) -> Result<(Unary, Loc), ParseError> {
-        let (r, end) = self.parse_binary(op)?;
+        let (r, rloc) = self.parse_binary(op)?;
 
-        loc += end;
+        loc += rloc;
         let unary = Unary { op, r: Box::new(r), loc };
         Ok((unary, loc))
     }
