@@ -52,11 +52,11 @@ an error.
 ```rust
 #[derive(Debug)]
 enum ParseError {
-    Unbalanced(Token, Token),
+    Unbalanced(Token, Token, Loc),
 }
 
 fn parse_expr(&mut self) -> Result<Expr, ParseError> {
-    let token = self.lexer.next()
+    let (token, _loc) = self.lexer.next()
         .ok_or(ParseError::UnexpectedEof)?;
 
     let left = match token {
@@ -66,22 +66,102 @@ fn parse_expr(&mut self) -> Result<Expr, ParseError> {
         Token::LParen => {
             let expr = self.parse_expr()?;
 
-            let token = self.next()?;
+            let (token, rloc) = self.lexer.next()
+                .ok_or(ParseError::UnexpectedEof)?;
             if self.next()? != Token::RParen {
                 // Unbalanced parenthesis; expected a `)` got `token`
-                return Err(ParseError::Unbalanced(Token::RParen, token));
+                return Err(ParseError::Unbalanced(Token::RParen, token, rloc));
             }
 
             expr
         },
-        _ => {
-            todo!()
-        }
+        _ => ...
     }
 
     Ok(left)
 }
 ```
+
+## Location Information
+
+In the previous code we already use the location in the error enum, but it would
+be useful if AST nodes also kept track of their original location in the source
+file. Then, whenever at a later point an error occurs, we can point to the
+erroneous location in the source file.
+
+All our AST nodes need to keep track of a `Loc`. Rust enums do not have shared
+fields, however. The typical solution you would find online is to wrap the enum
+into a struct, containing the shared field. Something like:
+
+```rust
+struct LocatedExpr {
+    expr: Expr,
+    loc: Loc,
+}
+```
+
+However, I find that this approach is cumbersome, for multiple reasons.
+
+- Now, whenever we have a nested expression in our AST, we need to make sure to
+  use `LocatedExpr` instead of `Expr`.
+- When constructing these AST nodes, we have to also construct a `LocatedExpr`
+  node every time we construct a located node.
+- And when operating on a located node we have to pull out the nested
+  expression.
+- Finally, the reason I find most frustrating, is that whenever we have a
+  function that operates on a specific node, e.g. `do_unary(unary: Unary)`, we
+  either lose the type information by wrapping the unary in a `LocatedExpr` like
+  `do_unary(unary: LocatedExpr)`, which introduces a lot of necessary
+  boilerplate, or beforehand we have to pass both fields as separate arguments:
+  `do_unary(unary: Unary, loc: Loc)`, again introducing a lot of boilerplate.
+  Even worse, whenever we add another field, for example type information, then
+  all functions need to be updated to include yet another argument, complicating
+  these function definitions. This might even be an impossible task in a large
+  codebase.
+
+Instead, I prefer to simply include a location field in every AST node. It is a
+bit more cumbersome now, but it will pay off in the future. If you want to be
+fancy about it, you could even create a macro that inserts the field
+automagically, reducing the amount of work whenever you decide to, for example,
+rename the field, or add a field containing type information.
+
+```rust
+struct Unary {
+    r: Box<Expr>,
+    op: Uop,
+    loc: Loc,
+}
+```
+
+We can now modify `parse_expr` to return an `(Expr, Loc)` tuple instead, and to
+insert the acquired location into the generated AST node.
+
+```rust
+fn parse_expr(&mut self) -> Result<(Expr, Loc), ParseError> {
+    let (token, mut loc) = self.lexer.next()
+        .ok_or(ParseError::UnexpectedEof)?;
+
+    let left = match token {
+        Token::Int(num) => {
+            Expr::Num(Num { num, loc })
+        },
+        Token::LParen => {
+            let expr = self.parse_expr()?;
+            // Don't include the parentheses in the location
+            loc = loc2;
+
+            ...
+
+            expr
+        },
+        _ => ...
+    }
+
+    Ok((left, loc))
+}
+```
+
+## Precedence and Associativity
 
 The next problem is dealing with operator precedence and associativity.
 Precedence tells us which operator goes before which one. For example,
