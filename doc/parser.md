@@ -18,8 +18,8 @@ int bar() { return 1; }
 ```
 
 Both the global variable and the function start with a type name, followed by an
-identifier. Only when a `;` or `(` is encountered, is it clear what case we are
-in.
+identifier (`foo` and `bar`). Only when a `;` or `(` is encountered, is it clear
+whether we are parsing a global variable, or a function definition.
 
 Luckily, for our calculator we only need one token of lookahead. If you are
 developing a language, and find that multiple tokens of lookahead are needed, it
