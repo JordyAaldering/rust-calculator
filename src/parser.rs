@@ -34,14 +34,16 @@ impl<'source> Parser<'source> {
                 Expr::Num(Num { num, loc })
             },
             Token::LParen => {
-                let (expr, _) = self.parse_expr()?;
+                let (expr, loc2) = self.parse_expr()?;
+                // Don't include the parentheses in the location
+                loc = loc2;
 
                 let (token, end) = self.next()?;
                 if token != Token::RParen {
+                    // Unbalanced parenthesis; expected a `)` got `token`
                     return Err(ParseError::Unbalanced(loc, end));
                 }
 
-                loc += end;
                 expr
             },
             _ => {

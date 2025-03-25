@@ -59,7 +59,7 @@ fn parse_expr(&mut self) -> Result<Expr, ParseError> {
     let token = self.lexer.next()
         .ok_or(ParseError::UnexpectedEof)?;
 
-    let mut left = match token {
+    let left = match token {
         Token::Int(num) => {
             Expr::Num(Num { num })
         },
