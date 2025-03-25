@@ -12,20 +12,20 @@ ahead one or more tokens.
 One token lookahead might not be enough, consider the following C code:
 
 ```C
-int foo;
+int foo = 5;
 
 int bar() { return 1; }
 ```
 
 Both the global variable and the function start with a type name, followed by an
-identifier (`foo` and `bar`). Only when a `;` or `(` is encountered, is it clear
+identifier (`foo` and `bar`). Only when `=` or `(` is encountered, is it clear
 whether we are parsing a global variable, or a function definition.
 
 Luckily, for our calculator we only need one token of lookahead. If you are
 developing a language, and find that multiple tokens of lookahead are needed, it
 might be beneficial to go back to the grammar, and change it in such a way that
 only a single token of lookahead is needed. In the case of the C code, for
-example, you might add an `fn` before functions, just like in Rust.
+example, you might add `fn` before functions, just like in Rust.
 
 We can use `std::iter::Peekable` to look ahead one token without consuming in.
 
